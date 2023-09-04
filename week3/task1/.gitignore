@@ -1,0 +1,15 @@
+# Ignore .terraform directories and their contents
+**/.terraform/*
+
+# Ignore .tfstate files (these contain sensitive data and should not be in version control)
+*.tfstate
+*.tfstate.*
+
+# Ignore .tfplan files (generated during `terraform plan`)
+*.tfplan
+
+# Ignore .terraform.lock.hcl files (used by Terraform v0.15 and later)
+.terraform.lock.hcl
+
+# Ignore private SSH key
+its-key
