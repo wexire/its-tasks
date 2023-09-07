@@ -33,3 +33,7 @@ variable "LISTENER_PORT" {
 variable "DEFAULT_VPC" {
   default = "vpc-0ec3239098554a0fb"
 }
+
+variable "env" {
+  default = "its"
+}

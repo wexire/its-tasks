@@ -13,6 +13,6 @@ resource "aws_launch_template" "its-lt" {
   update_default_version = "true"
 
   tags = {
-    Name = "its-lt"
+    Name = "${var.env}-lt"
   }
 }

@@ -26,7 +26,7 @@ resource "aws_security_group" "its-instance-sg" {
   }
 
   tags = {
-    Name = "its-instance-sg"
+    Name = "${var.env}-instance-sg"
   }
 }
 
@@ -50,6 +50,6 @@ resource "aws_security_group" "its-lb-sg" {
   }
 
   tags = {
-    Name = "its-lb-sg"
+    Name = "${var.env}-lb-sg"
   }
 }

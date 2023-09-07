@@ -6,7 +6,7 @@ resource "aws_lb" "its-lb" {
   subnets            = [var.SUBNET_A, var.SUBNET_B]
 
   tags = {
-    Name = "its-lb"
+    Name = "${var.env}-lb"
   }
 }
 
@@ -26,6 +26,10 @@ resource "aws_lb_target_group" "its-lb-tg" {
   port     = var.LISTENER_PORT
   protocol = "HTTP"
   vpc_id   = var.DEFAULT_VPC
+
+  tags = {
+    Name = "${var.env}-lb-tg"
+  }
 }
 
 output "LoadBalancerURL" {

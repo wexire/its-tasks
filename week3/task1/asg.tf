@@ -9,6 +9,10 @@ resource "aws_autoscaling_group" "its-asg" {
     id      = aws_launch_template.its-lt.id
     version = "$Latest"
   }
+
+  tags = {
+    Name = "${var.env}-asg"
+  }
 }
 
 resource "aws_autoscaling_attachment" "its-asg-attch" {
