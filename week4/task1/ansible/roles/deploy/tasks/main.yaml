@@ -31,6 +31,7 @@
   command: "{{project_path}}/venv/bin/python {{project_path}}/manage.py migrate"
   environment:
     DATABASE_URL: "postgres://{{user_name}}:{{user_passwd}}@10.0.3.247:5432/{{db_name}}"
+  run_once: True
 
 - name: Run the Django application
   command: "{{project_path}}/venv/bin/python {{project_path}}/manage.py runserver 0.0.0.0:8000"

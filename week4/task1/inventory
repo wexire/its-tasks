@@ -1,0 +1,19 @@
+all:
+  hosts:
+    web01:
+      ansible_host: 3.238.105.98
+    web02:
+      ansible_host: 54.208.169.31
+    db01:
+      ansible_host: 10.0.3.247
+      ansible_ssh_common_args: '-o ProxyCommand="ssh -o StrictHostKeyChecking=no -W %h:%p -q ec2-user@3.239.195.155 -i ../ssh-keys/its-bastion-key"'
+
+  children:
+    webservers:
+      hosts:
+        web01:
+        web02:
+
+  vars:
+    ansible_user: ec2-user
+    ansible_ssh_private_key_file: ../ssh-keys/its-instance-key

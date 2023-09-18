@@ -23,7 +23,7 @@ variable "AZS" {
 }
 
 variable "CONTROL_IP" {
-  default = "54.145.83.7"
+  default = "3.85.242.107"
 }
 
 variable "USER" {
