@@ -1,0 +1,41 @@
+- name: Clone the Django application from GitHub
+  git:
+    repo: https://github.com/digitalocean/sample-django
+    dest: "{{project_path}}/"
+    force: yes
+    update: yes
+
+- name: Create a Python virtual environment
+  command: python3 -m venv "{{project_path}}/venv"
+
+- name: Activate the virtual environment
+  shell: source "{{project_path}}/venv/bin/activate"
+
+- name: Install Python dependencies
+  pip:
+    virtualenv: "{{project_path}}/venv"
+    requirements: "{{project_path}}/requirements.txt"
+
+- name: Update Django settings.py file with PostgreSQL configuration
+  template:
+    src: ./roles/deploy/templates/settings.py.j2
+    dest: "{{project_path}}/mysite/settings.py"
+
+- name: Replace shebang line
+  lineinfile:
+    path: "{{project_path}}/manage.py"
+    regexp: '^#!/usr/bin/env python'
+    line: '#!{{project_path}}/venv/bin python'
+
+- name: Perform Django database migrations
+  command: "{{project_path}}/venv/bin/python {{project_path}}/manage.py migrate"
+  environment:
+    DATABASE_URL: "postgres://{{user_name}}:{{user_passwd}}@10.0.3.247:5432/{{db_name}}"
+
+- name: Run the Django application
+  command: "{{project_path}}/venv/bin/python {{project_path}}/manage.py runserver 0.0.0.0:8000"
+  poll: 0
+  async: 60
+  environment:
+    DATABASE_URL: "postgres://{{user_name}}:{{user_passwd}}@10.0.3.247:5432/{{db_name}}"
+  

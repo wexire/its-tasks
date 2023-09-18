@@ -1,0 +1,59 @@
+- name: Install required packages
+  yum:
+    name: "{{packages}}"
+    state: present
+
+- name: Check if PostgreSQL is initialized
+  stat:
+    path: "/var/lib/pgsql/data/pg_hba.conf"
+  register: postgres_data
+
+- name: Initialize PostgreSQL
+  shell: "postgresql-setup initdb"
+  when: not postgres_data.stat.exists
+
+- name: Start and enable service
+  service:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Create PostgreSQL database
+  community.postgresql.postgresql_db:
+    name: "{{db_name}}"
+    state: present
+  become_user: postgres
+
+- name: Create PostgreSQL user
+  community.postgresql.postgresql_user:
+    db: "{{db_name}}"
+    name: "{{user_name}}"
+    password: "{{user_passwd}}" 
+  become_user: postgres
+
+- name: Grant privileges to the database user
+  community.postgresql.postgresql_privs:
+    db: "{{db_name}}"
+    privs: ALL
+    role: "{{user_name}}"
+    type: schema
+    objs: public
+  become_user: postgres
+
+- name: Add entry to pg_hba.conf
+  lineinfile:
+    path: /var/lib/pgsql/data/pg_hba.conf
+    line: "host    {{db_name}}     {{user_name}}     10.0.0.0/16       password"
+    insertafter: EOF
+
+- name: Set listen_addresses in postgresql.conf
+  lineinfile:
+    path: /var/lib/pgsql/data/postgresql.conf
+    line: "listen_addresses = '*'"
+    regexp: '^#?listen_addresses = .*$'
+    backrefs: yes
+
+- name: Reload PostgreSQL
+  service:
+    name: postgresql
+    state: restarted

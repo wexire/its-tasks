@@ -1,0 +1,3 @@
+---
+packages: git, nginx, python3-pip, python3-devel, libffi-devel, openssl-devel, postgresql15
+group_packages: "@Development tools"

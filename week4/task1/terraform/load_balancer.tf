@@ -2,7 +2,7 @@ resource "aws_lb" "its-lb" {
   name               = "its-lb"
   load_balancer_type = "application"
   security_groups    = [aws_security_group.its-lb-sg.id]
-  subnets            = [aws_subnet.its-sub-pub-1.id, aws_subnet.its-sub-pub-2.id]
+  subnets            = [for subnet in aws_subnet.its-sub-pub : subnet.id]
 
   tags = {
     Name = "its-lb"
@@ -20,7 +20,7 @@ resource "aws_lb_target_group" "its-tg" {
 }
 
 resource "aws_lb_target_group_attachment" "its-tg-attach" {
-  count = length(aws_instance.its-web)
+  count            = length(aws_instance.its-web)
   target_group_arn = aws_lb_target_group.its-tg.arn
   target_id        = aws_instance.its-web[count.index].id
   port             = var.LISTENER_PORT

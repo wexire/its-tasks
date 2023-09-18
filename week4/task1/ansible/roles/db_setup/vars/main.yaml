@@ -1,0 +1,2 @@
+---
+packages: postgresql15.x86_64, postgresql15-server.x86_64, postgresql15-contrib.x86_64, python3-psycopg2.x86_64

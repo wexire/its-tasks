@@ -1,0 +1,41 @@
+---
+- name: Install required packages
+  yum:
+    name: "{{packages}}"
+    state: present
+
+- name: Install required group packages
+  yum:
+    name: "{{group_packages}}"
+    state: present
+
+- name: Start Nginx
+  service:
+    name: nginx
+    state: started
+
+- name: Get ansible_host value
+  debug:
+    var: ansible_host
+  register: host_ip
+    
+- name: Create an Nginx server block configuration file
+  template:
+    src: ./roles/app_setup/templates/its-app.conf.j2
+    dest: /etc/nginx/conf.d/its-app.conf
+
+- name: Replace servername in Nginx config
+  replace:
+    path: /etc/nginx/conf.d/its-app.conf
+    regexp: 'server_name\s+.+;'
+    replace: 'server_name {{host_ip.ansible_host}};'
+
+- name: Test Nginx configuration
+  command: nginx -t
+  register: nginx_test_result
+  ignore_errors: yes
+  changed_when: false
+
+- name: Reload Nginx if configuration is valid
+  command: systemctl reload nginx
+  when: nginx_test_result.rc == 0

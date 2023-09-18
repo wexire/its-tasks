@@ -1,0 +1,18 @@
+server {
+    listen 80;
+    server_name localhost;
+
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+
+    location / {
+        proxy_pass http://0.0.0.0:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+   
+   location /static/ {
+      	alias /home/ec2-user/sample-django/static;
+   }
+
+}
