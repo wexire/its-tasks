@@ -33,7 +33,7 @@ resource "aws_security_group" "its-container-sg" {
     from_port   = var.WEB_PORT
     to_port     = var.WEB_PORT
     protocol    = "tcp"
-    cidr_blocks = [var.ALL_IPS_BLOCK]
+    security_groups = [aws_security_group.its-lb-sg.id]
   }
 
   egress {
@@ -45,5 +45,30 @@ resource "aws_security_group" "its-container-sg" {
 
   tags = {
     Name = "its-container-sg"
+  }
+}
+
+resource "aws_security_group" "its-lb-sg" {
+  name        = "its-lb-sg"
+  description = "Allow access to port 8000"
+  vpc_id      = aws_vpc.its-vpc.id
+
+  ingress {
+    description = "Port 8000 access"
+    from_port   = var.WEB_PORT
+    to_port     = var.WEB_PORT
+    protocol    = "tcp"
+    cidr_blocks = [var.ALL_IPS_BLOCK]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [var.ALL_IPS_BLOCK]
+  }
+
+  tags = {
+    Name = "its-lb-sg"
   }
 }

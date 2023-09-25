@@ -8,7 +8,7 @@ resource "aws_ecs_task_definition" "its-ecs-tdef" {
   memory = 3072
   container_definitions = jsonencode([
     {
-      name  = "its-container"
+      name  = var.CONTAINER_NAME
       image = var.IMAGE_URL
       environment = [
         {
@@ -53,10 +53,15 @@ resource "aws_ecs_service" "its-ecs-service" {
   cluster         = aws_ecs_cluster.its-ecs.arn
   task_definition = aws_ecs_task_definition.its-ecs-tdef.arn
   launch_type     = "FARGATE"
-  desired_count   = 1
+  desired_count   = 2
   network_configuration {
-    subnets          = [aws_subnet.its-sub-pub[0].id, aws_subnet.its-sub-pub[1].id]
+    subnets          = [for subnet in aws_subnet.its-sub-pub : subnet.id]
     security_groups  = [aws_security_group.its-container-sg.id]
     assign_public_ip = true
+  }
+  load_balancer {
+    target_group_arn = aws_lb_target_group.its-tg.arn
+    container_name   = var.CONTAINER_NAME
+    container_port   = var.WEB_PORT
   }
 }

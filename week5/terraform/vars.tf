@@ -45,3 +45,6 @@ variable "DJANGO_SUPERUSER_USERNAME" {
 variable "DJANGO_SUPERUSER_EMAIL" {
   default = "test@gmail.com"
 }
+variable "CONTAINER_NAME" {
+  default = "its-container"
+}

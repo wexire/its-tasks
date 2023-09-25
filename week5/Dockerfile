@@ -1,12 +1,10 @@
-FROM python:3.8
+FROM python:3.8-slim
 
 ENV PYTHONUNBUFFERED 1
 
-RUN git clone https://github.com/digitalocean/sample-django.git
+WORKDIR /app
 
-WORKDIR /sample-django
-
-COPY entrypoint.sh /sample-django/entrypoint.sh
+COPY ./sample-django entrypoint.sh ./
 
 RUN chmod +x entrypoint.sh
 
@@ -19,7 +17,7 @@ rm -rf /var/lib/apt/lists/*
 EXPOSE 8000
 
 RUN groupadd -r itsyndicate && useradd -r -s /bin/false -g itsyndicate itsyndicate && \
-chown -R itsyndicate:itsyndicate /sample-django
+chown -R itsyndicate:itsyndicate /app
 
 USER itsyndicate
 
