@@ -34,7 +34,7 @@ module "eks" {
       max_size     = 2
       desired_size = 1
 
-      capacity_type  = "ON_DEMAND"
+      capacity_type  = "SPOT"
     }
   }
 
