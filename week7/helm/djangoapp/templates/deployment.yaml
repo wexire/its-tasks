@@ -1,11 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: django-deployment
+  name: {{ .Values.appName }}-deployment
   labels:
     app: {{ .Values.appName }}
 spec:
-  replicas: 2
   selector:
     matchLabels:
       app: {{ .Values.appName }}
@@ -24,46 +23,33 @@ spec:
         - containerPort: 8000
         readinessProbe:
           httpGet:
-            path: /
-            port: 8000
-          initialDelaySeconds: 5
-          periodSeconds: 10
+            path: {{ .Values.probes.path }}
+            port: {{ .Values.probes.port }}
+          initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.periodSeconds }}
         livenessProbe:
           httpGet:
-            path: /
-            port: 8000
-          initialDelaySeconds: 10
-          periodSeconds: 15
+            path: {{ .Values.probes.path }}
+            port: {{ .Values.probes.port }}
+          initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.periodSeconds }}
         env:
-        - name: DATABASE_URL
+        {{- range $key, $value := .Values.secretValues }}
+        - name: {{ $key }}
           valueFrom:
             secretKeyRef:
               name: django-secret
-              key: DATABASE_URL
-        - name: DJANGO_SUPERUSER_EMAIL
-          valueFrom:
-            secretKeyRef:
-              name: django-secret
-              key: DJANGO_SUPERUSER_EMAIL
-        - name: DJANGO_SUPERUSER_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: django-secret
-              key: DJANGO_SUPERUSER_USERNAME
-        - name: DJANGO_SUPERUSER_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: django-secret
-              key: DJANGO_SUPERUSER_PASSWORD
+              key: {{ $value }}
+        {{- end }}
         - name: DJANGO_ALLOWED_HOSTS
           valueFrom: 
             configMapKeyRef:
-              name: django-configmap
+              name: {{ .Values.appName }}-configmap
               key: DJANGO_ALLOWED_HOSTS
       volumes:
       - name: persistent-storage
         persistentVolumeClaim:
-          claimName: django-pvc
+          claimName: {{ .Values.appName }}-pvc
 
 
 ---
@@ -71,7 +57,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: django-service
+  name: {{ .Values.appName }}-service
 spec:
   selector:
     app: {{ .Values.appName }}
@@ -86,12 +72,12 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: django-hpa
+  name: {{ .Values.appName }}-hpa
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: django-deployment
+    name: {{ .Values.appName }}-deployment
   minReplicas: 2
   maxReplicas: 4
   metrics:
