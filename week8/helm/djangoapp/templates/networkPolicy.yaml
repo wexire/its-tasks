@@ -10,7 +10,15 @@ spec:
     - Ingress
     - Egress
   ingress:
-  - {}
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/16
+        - podSelector:
+            matchLabels:
+              app: {{ .Values.appName }}
+      ports:
+        - protocol: TCP
+          port: 8080
   egress:
   - {}
 

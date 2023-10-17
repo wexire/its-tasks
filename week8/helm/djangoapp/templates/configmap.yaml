@@ -4,6 +4,3 @@ metadata:
   name: {{ .Values.appName }}-configmap
 data:
   DJANGO_ALLOWED_HOSTS: '*'
-  mapUsers: |
-    - userarn: arn:aws:iam::746673457384:user/eks-developer
-      username: eks-developer
