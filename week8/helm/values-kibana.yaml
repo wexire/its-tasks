@@ -1,0 +1,10 @@
+elasticsearchHosts: "https://elasticsearch-master:9200"
+enterpriseSearch:
+  host: "https://elasticsearch-master:9200"
+
+readinessProbe:
+  failureThreshold: 3
+  initialDelaySeconds: 90
+  periodSeconds: 10
+  successThreshold: 3
+  timeoutSeconds: 5

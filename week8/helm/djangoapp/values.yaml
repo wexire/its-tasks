@@ -1,0 +1,12 @@
+appName: django
+image: 746673457384.dkr.ecr.us-east-1.amazonaws.com/its-registry:latest
+secretValues:
+  DATABASE_URL: DATABASE_URL
+  DJANGO_SUPERUSER_EMAIL: DJANGO_SUPERUSER_EMAIL
+  DJANGO_SUPERUSER_USERNAME: DJANGO_SUPERUSER_USERNAME
+  DJANGO_SUPERUSER_PASSWORD: DJANGO_SUPERUSER_PASSWORD
+probes:
+  path: /
+  port: 8000
+  initialDelaySeconds: 15
+  periodSeconds: 5
