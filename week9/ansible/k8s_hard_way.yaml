@@ -1,0 +1,23 @@
+---
+- name: Setup & Generate CA, TLS certs and Kubeconfigs
+  hosts: all
+
+  roles:
+  - setup
+  - ca_tls
+  - kubeconfigs
+
+- name: Generating the Data Encryption Config & Bootstrapping Etcd and Control Plane
+  hosts: masters
+
+  roles:
+  - data_encrypt
+  - etcd_bootstrap
+  - control_bootstrap
+
+- name: Bootstrapping worker nodes
+  hosts: workers
+  become: yes
+
+  roles:
+  - worker_bootstrap

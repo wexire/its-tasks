@@ -1,0 +1,14 @@
+- name: Generate ENCRYPTION_KEY
+  shell: head -c 32 /dev/urandom | base64
+  register: encryption_key_output
+
+- name: Copy encryption config template file
+  template:
+    src: ./roles/data_encrypt/templates/encryption-config.yaml.j2
+    dest: /home/ec2-user/encryption-config.yaml
+
+- name: Replace key in the file
+  ansible.builtin.replace:
+    path: /home/ec2-user/encryption-config.yaml
+    regexp: "ENCRYPTION_KEY"
+    replace: "{{ encryption_key_output.stdout }}"

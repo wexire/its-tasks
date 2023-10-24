@@ -1,0 +1,57 @@
+- name: Download and Install the etcd Binaries
+  shell: |
+    wget -q --show-progress --https-only --timestamping "https://github.com/etcd-io/etcd/releases/download/v3.4.15/etcd-v3.4.15-linux-amd64.tar.gz"
+    tar -xvf etcd-v3.4.15-linux-amd64.tar.gz
+    sudo mv etcd-v3.4.15-linux-amd64/etcd* /usr/local/bin/
+
+- name: Create /etc/etcd and /var/lib/etcd directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0700'
+  loop:
+    - /etc/etcd
+    - /var/lib/etcd
+  become: yes
+
+- name: Copy CA and key files to /etc/etcd
+  shell: "cp /home/ec2-user/{{ item }} /etc/etcd/"
+  with_items:
+    - ca.pem
+    - kubernetes-key.pem
+    - kubernetes.pem
+  become: yes
+
+- name: Get internal ip variable
+  shell: 'TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` && \
+    curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/local-ipv4'
+  register: internal_ip_output
+
+- name: Set internal ip variable
+  set_fact:
+    internal_ip: "{{ internal_ip_output.stdout }}"
+
+- name: Copy etcd systemd template file
+  template:
+    src: ./roles/etcd_bootstrap/templates/etcd.service.j2
+    dest: /etc/systemd/system/etcd.service
+  become: yes
+
+- name: Start the etcd Server
+  shell: |
+    systemctl daemon-reload
+    systemctl enable etcd
+    systemctl start etcd
+  become: yes
+
+- name: Run verification
+  shell: etcdctl member list --endpoints=https://127.0.0.1:2379 --cacert=/etc/etcd/ca.pem --cert=/etc/etcd/kubernetes.pem --key=/etc/etcd/kubernetes-key.pem
+  environment:
+    ETCDCTL_API: "3"
+  register: etcdctl_output
+  become: yes
+  ignore_errors: yes
+
+- name: See verification result
+  debug:
+    var: etcdctl_output.stdout

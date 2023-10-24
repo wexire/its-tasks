@@ -1,0 +1,84 @@
+---
+- name: Copy CA config template file
+  template:
+    src: ./roles/ca_tls/templates/ca-config.json.j2
+    dest: /home/ec2-user/ca-config.json
+
+- name: Copy CA CSR template file
+  template:
+    src: ./roles/ca_tls/templates/ca-csr.json.j2
+    dest: /home/ec2-user/ca-csr.json
+
+- name: Provision CA
+  shell: cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+
+- name: Copy Admin CSR template file
+  template:
+    src: ./roles/ca_tls/templates/admin-csr.json.j2
+    dest: /home/ec2-user/admin-csr.json
+
+- name: Generate Admin client cert
+  shell: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes admin-csr.json | cfssljson -bare admin
+
+- name: Copy Node CSR template file
+  template:
+    src: ./roles/ca_tls/templates/node-csr.json.j2
+    dest: /home/ec2-user/node-csr.json
+  when: inventory_hostname in groups['workers']
+
+- name: Get internal ip variable
+  shell: 'TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` && \
+    curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/local-ipv4'
+  register: internal_ip_output
+
+- name: Set internal ip variable
+  set_fact:
+    internal_ip: "{{ internal_ip_output.stdout }}"
+
+- name: Generate Kubelet client cert
+  shell: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -hostname={{ inventory_hostname }},{{ ansible_host }},{{ internal_ip }} -profile=kubernetes node-csr.json | cfssljson -bare {{ inventory_hostname }}
+  when: inventory_hostname in groups['workers']
+
+- name: Copy KCM CSR template file
+  template:
+    src: ./roles/ca_tls/templates/kube-controller-manager-csr.json.j2
+    dest: /home/ec2-user/kube-controller-manager-csr.json
+
+- name: Generate Kube Controller Manager client cert
+  shell: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager
+
+- name: Copy Kube Proxy CSR template file
+  template:
+    src: ./roles/ca_tls/templates/kube-proxy-csr.json.j2
+    dest: /home/ec2-user/kube-proxy-csr.json
+
+- name: Generate Kube Proxy client cert
+  shell: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-proxy-csr.json | cfssljson -bare kube-proxy
+
+- name: Copy Kube Scheduler CSR template file
+  template:
+    src: ./roles/ca_tls/templates/kube-scheduler-csr.json.j2
+    dest: /home/ec2-user/kube-scheduler-csr.json
+
+- name: Generate Kube Scheduler client cert
+  shell: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-scheduler-csr.json | cfssljson -bare kube-scheduler
+
+- name: Copy Kubernetes CSR template file
+  template:
+    src: ./roles/ca_tls/templates/kubernetes-csr.json.j2
+    dest: /home/ec2-user/kubernetes-csr.json
+  when: inventory_hostname in groups['masters']
+
+- name: Generate Kubernetes API server cert
+  shell: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -hostname={{ ansible_host }},{{ internal_ip }},{{ inventory_hostname }},10.32.0.1,127.0.0.1,localhost,kubernetes.default -profile=kubernetes kubernetes-csr.json | cfssljson -bare kubernetes
+  when: inventory_hostname in groups['masters']
+
+- name: Copy Service Account CSR template file
+  template:
+    src: ./roles/ca_tls/templates/service-account-csr.json.j2
+    dest: /home/ec2-user/service-account-csr.json
+  when: inventory_hostname in groups['masters']
+
+- name: Generate Service Account key pair
+  shell: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes service-account-csr.json | cfssljson -bare service-account
+  when: inventory_hostname in groups['masters']

@@ -1,0 +1,146 @@
+- name: Create Kubernetes configuration directory
+  file:
+    path: /etc/kubernetes/config
+    state: directory
+  become: yes
+
+- name: Download and Install the Kubernetes Controller Binaries
+  shell: |
+    wget -q --show-progress --https-only --timestamping \
+      "https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kube-apiserver" \
+      "https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kube-controller-manager" \
+      "https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kube-scheduler" \
+      "https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kubectl"
+    chmod +x kube-apiserver kube-controller-manager kube-scheduler kubectl
+    sudo mv kube-apiserver kube-controller-manager kube-scheduler kubectl /usr/local/bin/
+
+- name: Create directory for Kubernetes API files
+  file:
+    path: /var/lib/kubernetes/
+    state: directory
+  become: yes
+
+- name: Move neccessary files to the directory
+  command: mv {{ item }} /var/lib/kubernetes/
+  with_items:
+    - ca.pem
+    - ca-key.pem
+    - kubernetes-key.pem
+    - kubernetes.pem
+    - service-account-key.pem
+    - service-account.pem
+    - encryption-config.yaml
+  become: yes
+
+- name: Copy KubeAPI configuration systemd file
+  template:
+    src: ./roles/control_bootstrap/templates/kube-apiserver.service.j2
+    dest: /etc/systemd/system/kube-apiserver.service
+  become: yes
+
+- name: Move Kubernetes Control Manager kubeconfig
+  shell: mv kube-controller-manager.kubeconfig /var/lib/kubernetes/
+  become: yes
+
+- name: Copy KubeControlManager systemd template file
+  template:
+    src: ./roles/control_bootstrap/templates/kube-controller-manager.service.j2
+    dest: /etc/systemd/system/kube-controller-manager.service
+  become: yes
+
+- name: Move Kubernetes Scheduler kubeconfig
+  shell: mv kube-scheduler.kubeconfig /var/lib/kubernetes/
+  become: yes
+
+- name: Copy Kubernetes Scheduler config template file
+  template:
+    src: ./roles/control_bootstrap/templates/kube-scheduler.yaml.j2
+    dest: /etc/kubernetes/config/kube-scheduler.yaml
+  become: yes
+
+- name: Copy Kubernetes Scheduler systemd template file
+  template:
+    src: ./roles/control_bootstrap/templates/kube-scheduler.service.j2
+    dest: /etc/systemd/system/kube-scheduler.service
+  become: yes
+
+- name: Start the Controller Services
+  shell: |
+    systemctl daemon-reload
+    systemctl enable kube-apiserver kube-controller-manager kube-scheduler
+    systemctl start kube-apiserver kube-controller-manager kube-scheduler
+  become: yes
+
+- name: Update yum cache
+  yum:
+    update_cache: yes
+  become: yes
+
+- name: Install nginx
+  yum:
+    name: nginx
+    state: present
+  become: yes
+
+- name: Copy HTTP health check template file
+  template:
+    src: ./roles/control_bootstrap/templates/kubernetes.default.svc.cluster.local.j2
+    dest: /home/ec2-user/kubernetes.default.svc.cluster.local
+
+- name: Create /etc/nginx/sites-available directory
+  file:
+    path: /etc/nginx/sites-available
+    state: directory
+  become: yes
+
+- name: Create /etc/nginx/sites-enabled directory
+  file:
+    path: /etc/nginx/sites-enabled
+    state: directory
+  become: yes
+
+- name: Add 'include' line to nginx.conf
+  lineinfile:
+    path: /etc/nginx/nginx.conf
+    line: "include /etc/nginx/sites-enabled/*;"
+    insertafter: "^http {"
+  become: yes
+
+- name: Start & enable HTTP health check
+  shell: |
+    mv /home/ec2-user/kubernetes.default.svc.cluster.local /etc/nginx/sites-available/kubernetes.default.svc.cluster.local
+    ln -s /etc/nginx/sites-available/kubernetes.default.svc.cluster.local /etc/nginx/sites-enabled/
+    systemctl restart nginx
+    systemctl enable nginx
+  become: yes
+
+- name: Verification of Kubernetes control plane running
+  shell: kubectl cluster-info --kubeconfig admin.kubeconfig
+  register: kubectl_cluster_info
+
+- name: Display kubectl cluster-info output
+  debug:
+    var: kubectl_cluster_info.stdout_lines
+
+- name: Verification test of HTTP health checks
+  shell: 'curl -H "Host: kubernetes.default.svc.cluster.local" -i http://127.0.0.1/healthz'
+  register: curl_healthz
+
+- name: Display curl output
+  debug:
+    var: curl_healthz.stdout_lines
+  
+- name: Copy RBAC config template for Kubelet Authorization
+  template:
+    src: ./roles/control_bootstrap/templates/kube-rbac.yaml.j2
+    dest: /home/ec2-user/kube-rbac.yaml
+
+- name: Copy RBAC Binding config template
+  template:
+    src: ./roles/control_bootstrap/templates/kube-rbac-bind.yaml.j2
+    dest: /home/ec2-user/kube-rbac-bind.yaml
+
+- name: Apply the RBAC configs
+  shell: |
+    kubectl apply --kubeconfig admin.kubeconfig -f kube-rbac.yaml
+    kubectl apply --kubeconfig admin.kubeconfig -f kube-rbac-bind.yaml
