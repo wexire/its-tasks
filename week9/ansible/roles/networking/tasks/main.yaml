@@ -1,0 +1,9 @@
+- name: Enable IP forwarding
+  shell: |
+    sudo sysctl net.ipv4.conf.all.forwarding=1
+    echo "net.ipv4.conf.all.forwarding=1" | sudo tee -a /etc/sysctl.conf
+  when: inventory_hostname in groups['workers']
+
+- name: Install Weave Net
+  shell: kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')&env.IPALLOC_RANGE=10.0.0.0/16"
+  when: inventory_hostname in groups['masters']

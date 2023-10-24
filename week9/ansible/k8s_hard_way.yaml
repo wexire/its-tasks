@@ -23,7 +23,20 @@
   - worker_bootstrap
 
 - name: Setup kubectl locally
-  hosts: local
+  hosts: 127.0.0.1
+  connection: local
 
   roles:
   - kubectl_conf
+
+- name: Setup networking
+  hosts: all
+
+  roles:
+  - networking
+
+- name: Setup cluster add-ons
+  hosts: masters
+
+  roles:
+  - dns_addons
