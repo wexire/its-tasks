@@ -21,3 +21,9 @@
 
   roles:
   - worker_bootstrap
+
+- name: Setup kubectl locally
+  hosts: local
+
+  roles:
+  - kubectl_conf

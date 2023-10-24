@@ -1,0 +1,21 @@
+- name: Setup kubectl locally
+  shell: |
+    kubectl config set-cluster kubernetes-the-hard-way \
+      --certificate-authority=ca.pem \
+      --embed-certs=true \
+      --server=https://{{ hostvars['master01'].ansible_host }}:6443
+    kubectl config set-credentials admin \
+      --client-certificate=admin.pem \
+      --client-key=admin-key.pem
+    kubectl config set-context kubernetes-the-hard-way \
+      --cluster=kubernetes-the-hard-way \
+      --user=admin
+    kubectl config use-context kubernetes-the-hard-way
+
+- name: Run kubectl get nodes
+  shell: kubectl get nodes
+  register: kubectl_output
+
+- name: Display kubectl output
+  debug:
+    var: kubectl_output.stdout_lines

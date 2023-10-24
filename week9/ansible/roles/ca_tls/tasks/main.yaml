@@ -82,3 +82,13 @@
 - name: Generate Service Account key pair
   shell: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes service-account-csr.json | cfssljson -bare service-account
   when: inventory_hostname in groups['masters']
+
+- name: Fetch Certificate Files to Control Machine
+  fetch:
+    src: "/home/ec2-user/{{ item }}"
+    dest: "/home/ec2-user/{{ item }}"
+  run_once: true
+  with_items:
+    - ca.pem
+    - admin.pem
+    - admin-key.pem

@@ -12,8 +12,6 @@ authorization:
 clusterDomain: "cluster.local"
 clusterDNS:
   - "10.32.0.10"
-podCIDR: "10.0.1.0/24"
-resolvConf: "/run/systemd/resolve/resolv.conf"
 runtimeRequestTimeout: "15m"
 tlsCertFile: "/var/lib/kubelet/{{ inventory_hostname }}.pem"
 tlsPrivateKeyFile: "/var/lib/kubelet/{{ inventory_hostname }}-key.pem"
