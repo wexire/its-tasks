@@ -40,3 +40,10 @@
 
   roles:
   - dns_addons
+
+- name: Smoke Test
+  hosts: 127.0.0.1
+  connection: local
+
+  roles:
+  - smoke_test

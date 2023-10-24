@@ -1,0 +1,67 @@
+- name: Create generic secret
+  shell: kubectl create secret generic kubernetes-the-hard-way --from-literal="mykey=mydata"
+
+- name: Print a hexdump of the kubernetes-the-hard-way secret stored in etcd
+  shell: ssh -i ../ssh-keys/its-node-key ec2-user@{{ hostvars['master01'].ansible_host }} \
+    etcdctl get \
+    --endpoints=https://127.0.0.1:2379 \
+    --cacert=/etc/etcd/ca.pem \
+    --cert=/etc/etcd/kubernetes.pem \
+    --key=/etc/etcd/kubernetes-key.pem \
+    /registry/secrets/default/kubernetes-the-hard-way | hexdump -C
+  environment:
+    ETCDCTL_API: "3"
+  become: yes
+  register: etcdctl_output
+
+- name: See result of verification
+  debug:
+    var: etcdctl_output.stdout
+
+- name: Nginx deployment test
+  shell: |
+    kubectl create deployment nginx --image=nginx
+    kubectl get pods -l app=nginx -o jsonpath="{.items[0].metadata.name}"
+  register: pod_name
+
+- name: Forward port 8080
+  shell: kubectl port-forward {{ pod_name.stdout }} 8080:80
+
+- name: Test result of port forwarding
+  shell: curl --head http://127.0.0.1:8080
+  register: nginx_output
+
+- name: See result of nginx forwarding test
+  debug:
+    var: nginx_output.stdout
+
+- name: Print the nginx pod logs
+  shell: kubectl logs {{ pod_name.stdout }}
+  register: logs_output
+
+- name: See the logs
+  debug:
+    var: logs_output.stdout
+
+- name: Print the nginx version in the container
+  shell: kubectl exec -ti {{ pod_name.stdout }} -- nginx -v
+  register: version_output
+
+- name: See exec version test result
+  debug:
+    var: version_output.stdout
+
+- name: Expose the nginx deployment using a NodePort service
+  shell: |
+    ssh -L 6443:localhost:6443 -i ../ssh-keys/its-node-key ec2-user@{{ hostvars['master01'].ansible_host }}
+    kubectl expose deployment nginx --port 80 --type NodePort
+    kubectl get svc nginx --output=jsonpath='{range .spec.ports[0]}{.nodePort}'
+  register: service_node_port
+
+- name: Service test
+  shell: 'curl -I localhost:{{ service_node_port.stdout }}'
+  register: service_test_output
+
+- name: See service test output
+  debug:
+    var: service_test_output.stdout
