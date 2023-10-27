@@ -1,0 +1,28 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "djangoapp.fullname" . }}
+labels:
+  {{- include "djangoapp.labels" . | nindent 4 }}
+rules:
+- apiGroups: ["*"]
+  resources: ["deployments", "configmaps", "pods", "secrets", "services"]
+  verbs: ["get", "list", "watch"]
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "djangoapp.fullname" . }}
+labels:
+  {{- include "djangoapp.labels" . | nindent 4 }}
+subjects:
+- kind: User
+  name: eks-developer
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: {{ .Values.appName }}-reader
+  apiGroup: rbac.authorization.k8s.io

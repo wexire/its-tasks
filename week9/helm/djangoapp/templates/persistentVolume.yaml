@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "djangoapp.fullname" . }}
+labels:
+  {{- include "djangoapp.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: 200Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: /data/
+    type: DirectoryOrCreate
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "djangoapp.fullname" . }}
+labels:
+  {{- include "djangoapp.labels" . | nindent 4 }}
+spec:
+  volumeName: {{ .Values.appName }}-pv
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Mi
+  storageClassName: local-storage

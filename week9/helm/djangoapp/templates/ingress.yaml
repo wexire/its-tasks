@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "djangoapp.fullname" . }}
+  annotations:
+    cert-manager.io/issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - kube.wexire.xyz
+    secretName: {{ .Values.appName }}-tls
+  rules:
+  - host: django.wexire.xyz
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.appName }}-service
+            port:
+              number: 8080

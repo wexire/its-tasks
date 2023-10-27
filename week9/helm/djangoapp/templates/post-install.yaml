@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: post-install-job
+labels:
+  {{- include "djangoapp.labels" . | nindent 4 }}
+spec:
+  template:
+    spec:
+      containers:
+      - name: post-install-job-container
+        image: busybox
+        args: ['sh', '-c', 'echo "Running post-install hook"']
+      restartPolicy: Never
+  backoffLimit: 4
