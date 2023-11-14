@@ -40,4 +40,8 @@ Grafana Dashboard
 
 ![image](https://github.com/wexire/its-tasks/assets/72460610/8dcb52ba-3e5b-4d01-a056-8bd7f3d1bad3)
 
+Create alert rule for high CPU
 
+![image](https://github.com/wexire/its-tasks/assets/72460610/155b2fbe-2e42-491d-b4f3-0725c951022a)
+
+![image](https://github.com/wexire/its-tasks/assets/72460610/f3e793c0-718b-4b21-82ef-02e3b936220d)
